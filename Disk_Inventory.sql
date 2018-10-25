@@ -5,7 +5,7 @@
 *	Build: project 5 Deliverable							*
 ************************************************************/
 
---See Line 359 for Project 5 Selects
+--See Line 358 for Project 5 Code
 
 USE MASTER;
 
@@ -303,7 +303,7 @@ if OBJECT_ID ('View_Inividual_Artist') IS NOT NULL
 GO
 --Create the View
 CREATE VIEW View_Inividual_Artist AS
-SELECT artist_id,
+SELECT artist_id, 
 	first_name As [First Name],
 	last_name AS [Last Name]
 FROM Artist
@@ -311,7 +311,7 @@ Where first_name IS NOT NULL;
 GO
 
 --Show results of View creation
-SELECT [First Name],[Last Name]
+SELECT DISTINCT [First Name],[Last Name]  -- added Distinct 10-25-18
 FROM View_Inividual_Artist;
 /**********************************************************************/
 
@@ -355,7 +355,6 @@ FROM Rental_Log
 Where check_in_date IS NULL
 /**********************************************************************/
 
-
 -- 3A. Create Insert, Update, and Delete stored procedures for the artist table. 
 -- Update procedure accepts a primary key value and the artist’s names for update. 
 IF OBJECT_ID('sp_Update_Artist') IS NOT NULL
@@ -379,26 +378,24 @@ AS
 			NOT EXISTS
 				(SELECT artist_type_ID
 				FROM Artist_Type
-				Where artist_type_ID = UPPER(@artistType)))
-		THROW 50003, 'Invalid Artist type code', 1;
+				WHERE artist_type_ID = UPPER(@artistType)))
+		THROW 50003, 'Invalid Artist type code.  Varify Code and try again.', 1;
 
 		--check if this artist exists
 		IF EXISTS 
 			(SELECT *
 			FROM Artist
-			WHERE artist_ID = @artistID OR first_name = @firstName OR 
-				last_name = @lastName OR group_name = @groupName)
+			WHERE artist_ID = @artistID)
 	
 		--Update Artist info
 		UPDATE Artist
 		SET first_name = @firstName, 
 			last_name = @lastName, group_name = @groupName,
 			artist_type_ID = UPPER(@artistType)
-		WHERE artist_ID = @artistID OR first_name = @firstName OR 
-				last_name = @lastName OR group_name = @groupName;
+		WHERE artist_ID = @artistID
 
 		ELSE
-		THROW 50002, 'No Valid Results from Given Parameters!', 1;
+		THROW 50002, 'Update proccess failed to complete!', 1;
 	END TRY
 	BEGIN CATCH
 		PRINT 'Failed to Update Record.';
@@ -473,15 +470,37 @@ GO
 
 -- 4A. Create Insert, Update, and Delete stored procedures for the borrower table. 
 -- Update procedure accepts a primary key value and the borrower’s names for update.
-
 IF OBJECT_ID('sp_Update_Borrower') IS NOT NULL
 	DROP PROC sp_Update_Borrower;
 GO
 
 CREATE PROC sp_Update_Borrower
-
+	@borrowerID INT,
+	@email varchar(100),
+	@first varchar(32),
+	@last varchar(32),
+	@phone bigint
 AS	
 	BEGIN TRY
+		--Check that all fields are filled out
+		IF (@borrowerID IS NULL OR @email IS NULL OR @first 
+			IS NULL OR @last IS NULL OR @phone IS NULL )
+			THROW 50004, 'NULL Values not Allowed', 1;
+
+		--check if this Borrower exists
+		IF EXISTS 
+			(SELECT *
+			FROM Borrower
+			WHERE borrower_ID = @borrowerID)
+	
+		--Update Borrower info
+		UPDATE Borrower
+		SET first_name = @first, last_name = @last, 
+			emaill_address = @email, phone_number = @phone
+		WHERE borrower_ID = @borrowerID
+
+		ELSE
+		THROW 50002, 'No Valid Results From Given Borrower ID!', 1;
 
 	END TRY
 	BEGIN CATCH
@@ -498,9 +517,18 @@ IF OBJECT_ID('sp_Insert_Borrower') IS NOT NULL
 GO
 
 CREATE PROC sp_Insert_Borrower
-
+	@email varchar(100),
+	@first varchar(32),
+	@last varchar(32),
+	@phone bigint
 AS	
 	BEGIN TRY
+
+		-- Add the Borrower Info to the DB
+		INSERT INTO Borrower
+			(first_name, last_name, phone_number, emaill_address)
+		VALUES
+			(@first, @last, @phone, @email);
 
 	END TRY
 	BEGIN CATCH
@@ -517,10 +545,18 @@ IF OBJECT_ID('sp_Delete_Borrower') IS NOT NULL
 GO
 
 CREATE PROC sp_Delete_Borrower
-
+	@borrowerID INT
 AS	
 	BEGIN TRY
-
+		If  EXISTS(
+			SELECT borrower_ID
+			FROM Borrower
+			WHERE borrower_ID = @borrowerID)
+		--Delete The Borrower
+			DELETE Borrower
+			WHERE borrower_ID = @borrowerID;
+		ELSE
+			THROW 50002, 'No Valid Results from Given Borrower ID!', 1;
 	END TRY
 	BEGIN CATCH
 		PRINT 'Failed to Delete Record.';
@@ -529,3 +565,140 @@ AS
 	END CATCH;
 GO
 /**********************************************************************/
+
+-- 5A Create Insert, Update, and Delete stored procedures for the disk table. 
+-- Update procedure accepts a primary key value and the disk information for update.
+IF OBJECT_ID('sp_Update_Disk') IS NOT NULL
+	DROP PROC sp_Update_Disk;
+GO
+
+CREATE PROC sp_Update_Disk
+	@diskID INT,
+	@name VARCHAR(255),
+	@release datetime, 
+	@type varchar(10),
+	@status int,
+	@genre int
+AS
+	BEGIN TRY
+		--Check to see if you're updating a valid row 
+		IF @diskID IS NULL
+		THROW 50011, 'Invalid Disk ID!', 1;
+	
+		--Check if the Disk Type ID is valid
+		IF (NOT EXISTS
+				(SELECT disk_type_ID
+				FROM Disk_Type
+				WHERE disk_type_ID = UPPER(@type)))
+		THROW 50013, 'Invalid Disk type code.  Varify code and try again.', 1;
+
+		--Check if the Disk Status ID is valid
+		IF (NOT EXISTS
+				(SELECT status_code_ID
+				FROM Disk_Status
+				WHERE status_code_ID = @status))
+		THROW 50014, 'Invalid Status type code.  Varify code and try again.', 1;
+
+		--Check if the Disk Genre ID is valid
+		IF (NOT EXISTS
+				(SELECT genre_ID
+				FROM Genre
+				WHERE genre_ID = @genre))
+		THROW 50012, 'Invalid Genre type code.  Varify code and try again.', 1;
+
+		--check if this Disk exists
+		IF EXISTS 
+			(SELECT *
+			FROM Disk
+			WHERE disk_ID = @diskID)
+	
+		--Update Disk info
+		UPDATE Disk
+		SET disk_name = @name, 
+			rel_date = @release, disk_type_ID = UPPER(@type) ,
+			status_code_ID = @status, genre_ID = @genre
+		WHERE disk_ID = @diskID;
+
+		ELSE
+		THROW 50002, 'Update proccess failed to complete!', 1;
+	END TRY
+	BEGIN CATCH
+		PRINT 'Failed to Update Record.';
+		PRINT 'ERROR: '+ CONVERT (VARCHAR, ERROR_NUMBER(), 1)
+			+ ' ' + ERROR_MESSAGE(); 
+	END CATCH;
+GO
+/**********************************************************************/
+-- 5B Insert accepts all columns as input parameters except for identity fields.
+
+IF OBJECT_ID('sp_Insert_Disk') IS NOT NULL
+	DROP PROC sp_Insert_Disk;
+GO
+
+-- adds a disk Disk who's status is assumed to be instock
+CREATE PROC sp_Insert_Disk
+	@name VARCHAR(255),
+	@release datetime, 
+	@type varchar(10),
+	@genre int
+AS
+	BEGIN TRY
+		--Check if the Disk Type ID is valid
+		IF (NOT EXISTS
+				(SELECT disk_type_ID
+				FROM Disk_Type
+				WHERE disk_type_ID = UPPER(@type)))
+		THROW 50013, 'Invalid Disk type code.  Varify code and try again.', 1;
+
+		--Check if the Disk Genre ID is valid
+		IF (NOT EXISTS
+				(SELECT genre_ID
+				FROM Genre
+				WHERE genre_ID = @genre))
+		THROW 50012, 'Invalid Genre type code.  Varify code and try again.', 1;
+
+		INSERT INTO Disk
+			(disk_name, rel_date, disk_type_ID, status_code_ID, genre_ID)
+		VALUES
+			(@name, @release, @type, 2/*instock*/, @genre );
+
+	END TRY
+	BEGIN CATCH
+		PRINT 'Failed to Update Record.';
+		PRINT 'ERROR: '+ CONVERT (VARCHAR, ERROR_NUMBER(), 1)
+			+ ' ' + ERROR_MESSAGE(); 
+	END CATCH;
+GO
+
+/**********************************************************************/
+-- 5C Delete accepts a primary key value for delete.
+
+IF OBJECT_ID('sp_Delete_Disk') IS NOT NULL
+	DROP PROC sp_Delete_Disk;
+GO
+
+CREATE PROC sp_Delete_Disk
+		@diskID INT
+AS	
+	BEGIN TRY
+		-- Check to see if the artist ID exists
+		If  EXISTS(
+			SELECT disk_ID
+			FROM Disk
+			WHERE disk_ID = @diskID)
+		--Delete The Artist
+			DELETE Disk
+			WHERE disk_ID = @diskID;
+
+		ELSE
+			THROW 50032, 'No Valid Results from Given Disk ID!', 1;
+	END TRY
+	BEGIN CATCH
+		PRINT 'Failed to Delete Record.';
+		PRINT 'ERROR: '+ CONVERT (VARCHAR, ERROR_NUMBER(), 1)
+			+ ' ' + ERROR_MESSAGE(); 
+	END CATCH;
+GO
+
+/**********************************************************************/
+
