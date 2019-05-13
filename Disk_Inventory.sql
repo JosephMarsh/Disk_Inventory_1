@@ -1,8 +1,8 @@
 /************************************************************
-*	Disk Inventory Project									*
-*	By Joseph Marsh											*
-*	10/19/218												*
-*	Build: project 4 Deliverable							*
+*	Disk Inventory Project				    *
+*	By Joseph Marsh					    *
+*	10/19/218					    *
+*	Build: project 4 Deliverable			    *
 ************************************************************/
 
 --See Line 285 for Project 4 Selects
@@ -295,7 +295,7 @@ ORDER BY last_name, first_name
 
 /**********************************************************************/
 
--- 4 Create a view called View_Individual_Artist that shows the artists’ 
+-- 4 Create a view called View_Individual_Artist that shows the artistsÂ’ 
 -- names and not group names
 --Check to see if the View has already been created
 if OBJECT_ID ('View_Inividual_Artist') IS NOT NULL
@@ -330,7 +330,7 @@ ORDER BY [Group Name];
 /**********************************************************************/
 
 -- 6 Show which disks have been borrowed and who borrowed them. 
--- Sort by Borrower’s Last Name.
+-- Sort by BorrowerÂ’s Last Name.
 SELECT first_name AS [First], last_name AS [Last], disk_name AS [Disk Name]
 FROM Rental_Log
 	JOIN Borrower ON Borrower.borrower_ID = Rental_Log.borrower_ID
