@@ -9,47 +9,47 @@
 
 use master;
 
-if DB_ID('Disk_Inventory') is not null
-	Drop DATABASE Disk_Inventory;
+if DB_ID('Disk_Inventory') IS NOT null
+	DROP DATABASE Disk_Inventory;
 GO
 
-create database Disk_Inventory;
+CREATE database Disk_Inventory;
 GO
 
 use Disk_Inventory;
 
 
 --Stores user info (no depenancies)
-create table Borrower
-	(borrower_ID int identity primary key not null,
-	emaill_address varchar(100) not null unique,
-	first_name varchar (32) not null ,
-	last_name varchar (32) not null, 
-	phone_number bigint not null); --Changed to bigint 10/12/18
+CREATE TABLE Borrower
+	(borrower_ID int identity primary key NOT null,
+	emaill_address varchar(100) NOT null unique,
+	first_name varchar (32) NOT null ,
+	last_name varchar (32) NOT null, 
+	phone_number bigint NOT null); --Changed to bigint 10/12/18
 
 --Stores disk status Identifiers (no depenancies)
-create TABLE Disk_Status
-	(status_code_ID int identity primary key not null,
-	disk_description varchar(255) not null);
+CREATE TABLE Disk_Status
+	(status_code_ID int identity primary key NOT null,
+	disk_description varchar(255) NOT null);
 
 --Stores disk Type Identifiers (no depenancies)
-create TABLE Disk_Type
-	(disk_type_ID varchar(10) primary key not null,
-	disk_type_description varchar(255) not null);
+CREATE TABLE Disk_Type
+	(disk_type_ID varchar(10) primary key NOT null,
+	disk_type_description varchar(255) NOT null);
 
 --Stores list of Genres (no depenancies)
-create TABLE Genre
-	(genre_ID int identity primary key not null,
-	genre_description varchar(255) not null,
-	genre_name varchar(32) not null );
+CREATE TABLE Genre
+	(genre_ID int identity primary key NOT null,
+	genre_description varchar(255) NOT null,
+	genre_name varchar(32) NOT null );
 
 --Stores list of artist types (no depenancies)
-create TABLE Artist_Type
-	(artist_type_ID varchar(10) primary key not null,
-	artist_type_description varchar(255) not null);
+CREATE TABLE Artist_Type
+	(artist_type_ID varchar(10) primary key NOT null,
+	artist_type_description varchar(255) NOT null);
 
 --Stores list of artists (has Artist Type)
-create TABLE Artist
+CREATE TABLE Artist
 	(artist_ID int identity primary key not null,
 	first_name varchar(32) null,--can be null
 	last_name varchar(32) null, --can be null
@@ -58,7 +58,7 @@ create TABLE Artist
 		not null);
 
 --Stores list of disks (has Disk_Type, Status_Code, Genre)
-create TABLE Disk
+CREATE TABLE Disk
 	(disk_ID int identity primary key,
 	disk_name varchar(255) not null,
 	rel_date datetime not null, --date the disk is reased for checkout
@@ -67,7 +67,7 @@ create TABLE Disk
 	genre_ID int REFERENCES Genre(genre_ID) not null );
 
 --Stores log of rental activities (has Borrwer and Disk)
-create TABLE Rental_Log
+CREATE TABLE Rental_Log
 	(check_out_date datetime not null,
 	check_in_date datetime null, --can be null for disks that have never been check in
 	borrower_ID int References Borrower(borrower_ID)not null ,
@@ -76,7 +76,7 @@ create TABLE Rental_Log
 
 --Stores Artist/Disk Relationships (has Disk and Artist)
 
-create TABLE Disk_Has_Artist
+CREATE TABLE Disk_Has_Artist
 	(disk_ID int References Disk(disk_ID)not null,
 	artist_ID int References Artist(artist_ID)not null,
 	PRIMARY KEY (disk_ID, artist_ID));
@@ -330,7 +330,7 @@ ORDER BY [Group Name];
 /**********************************************************************/
 
 -- 6 Show which disks have been borrowed and who borrowed them. 
--- Sort by Borrowers Last Name.
+-- Sort by Borrowers Last Name.
 SELECT first_name AS [First], last_name AS [Last], disk_name AS [Disk Name]
 FROM Rental_Log
 	JOIN Borrower ON Borrower.borrower_ID = Rental_Log.borrower_ID
